@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "FORME E-Commerce REST API",
+    "_postman_id": "b3e944fb-2a54-469b-8e11-forme0000001",
+    "description": "Comprehensive Postman test suite for FORME Luxury Bag E-Commerce REST API (Spring Boot + H2 Database + OpenAPI).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Users",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"charlotte_v\",\n  \"email\": \"charlotte@forme.luxury\",\n  \"password\": \"formePass2026\",\n  \"fullName\": \"Charlotte Vance\",\n  \"phone\": \"+1 212-555-0199\",\n  \"address\": \"500 West 24th St, Chelsea, NY\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"sophia\",\n  \"password\": \"customer123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/profile/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api", "auth", "profile", "{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          }
+        },
+        {
+          "name": "Filter Products by Collection",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/products?collection=LATEST_DROPS",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [{ "key": "collection", "value": "LATEST_DROPS" }]
+            }
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/products?search=Nova",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [{ "key": "search", "value": "Nova" }]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cirrus 300 Arc Handbag\",\n  \"modelNumber\": \"Cirrus 300\",\n  \"description\": \"Sculptural pleated silhouette in ivory grained calfskin.\",\n  \"price\": 495.00,\n  \"stockQuantity\": 15,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80\",\n  \"color\": \"Chalk Ivory\",\n  \"badge\": \"NEW\",\n  \"collectionTag\": \"LATEST_DROPS\",\n  \"isFeatured\": true,\n  \"categoryId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nova 210 Sculptural Bag (Updated)\",\n  \"modelNumber\": \"Nova 210\",\n  \"description\": \"Updated description with enhanced Italian leather specs.\",\n  \"price\": 440.00,\n  \"stockQuantity\": 25,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80\",\n  \"color\": \"Cream Ivory\",\n  \"badge\": \"BESTSELLER\",\n  \"collectionTag\": \"EDITORS_PICKS\",\n  \"isFeatured\": true,\n  \"categoryId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/products/6", "host": ["{{baseUrl}}"], "path": ["api", "products", "6"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Miniature Silhouettes\",\n  \"slug\": \"miniature-silhouettes\",\n  \"description\": \"Compact micro-editions sculpted for evening grace.\",\n  \"imageUrl\": \"https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Shopping Cart",
+      "item": [
+        {
+          "name": "Get Shopping Cart",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cart?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}},\n  \"productId\": 1,\n  \"quantity\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/cart/items", "host": ["{{baseUrl}}"], "path": ["api", "cart", "items"] }
+          }
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/1?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart", "items", "1"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Remove Item from Cart",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/1?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart", "items", "1"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/cart?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Orders",
+      "item": [
+        {
+          "name": "Create Order (Checkout)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}},\n  \"shippingAddress\": \"124 Mercer Street, Soho, New York, NY 10012\",\n  \"contactPhone\": \"+1 555-0142\",\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"productId\": 2,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/1", "host": ["{{baseUrl}}"], "path": ["api", "orders", "1"] }
+          }
+        },
+        {
+          "name": "Get Orders by User ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api", "orders", "user", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders/1/status", "host": ["{{baseUrl}}"], "path": ["api", "orders", "1", "status"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Favorites / Wishlist",
+      "item": [
+        {
+          "name": "Get User Favorites",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Add Product to Favorites",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/1?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "1"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Remove Product from Favorites",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/1?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "1"],
+              "query": [{ "key": "userId", "value": "{{userId}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Customer Reviews",
+      "item": [
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reviews/product/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "reviews", "product", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Add Product Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}},\n  \"rating\": 5,\n  \"comment\": \"Exceptional quality and exquisite contour lines. Perfect companion for gallery openings.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/reviews/product/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "reviews", "product", "{{productId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
