@@ -35,43 +35,57 @@ public class DataLoader implements CommandLineRunner {
 
     private void seedUsers() {
         // Primary requested admin: mhmd@gmail.com with password 1234
-        if (userRepository.findByEmail("mhmd@gmail.com").isEmpty()) {
-            User mhmdAdmin = new User(
-                    "mhmd",
-                    "mhmd@gmail.com",
-                    "1234",
-                    "Mohamed (Admin)",
-                    "ADMIN"
-            );
-            mhmdAdmin.setPhone("+1 555-0100");
-            mhmdAdmin.setAddress("Shopio Global HQ, Executive Suite 1");
-            userRepository.save(mhmdAdmin);
+        try {
+            if (userRepository.findByEmail("mhmd@gmail.com").isEmpty() && userRepository.findByUsername("mhmd").isEmpty()) {
+                User mhmdAdmin = new User(
+                        "mhmd",
+                        "mhmd@gmail.com",
+                        "1234",
+                        "Mohamed (Admin)",
+                        "ADMIN"
+                );
+                mhmdAdmin.setPhone("+1 555-0100");
+                mhmdAdmin.setAddress("Shopio Global HQ, Executive Suite 1");
+                userRepository.save(mhmdAdmin);
+            }
+        } catch (Exception e) {
+            // Already seeded or exists
         }
 
-        if (userRepository.findByEmail("admin@shopio.com").isEmpty()) {
-            User admin = new User(
-                    "admin",
-                    "admin@shopio.com",
-                    "admin123",
-                    "Shopio Store Admin",
-                    "ADMIN"
-            );
-            admin.setPhone("+1 555-0199");
-            admin.setAddress("742 Evergreen Blvd, Suite 10, NY");
-            userRepository.save(admin);
+        try {
+            if (userRepository.findByEmail("admin@shopio.com").isEmpty() && userRepository.findByUsername("admin").isEmpty()) {
+                User admin = new User(
+                        "admin",
+                        "admin@shopio.com",
+                        "admin123",
+                        "Shopio Store Admin",
+                        "ADMIN"
+                );
+                admin.setPhone("+1 555-0199");
+                admin.setAddress("742 Evergreen Blvd, Suite 10, NY");
+                userRepository.save(admin);
+            }
+        } catch (Exception e) {
+            // Already seeded or exists
         }
 
-        if (userRepository.findByEmail("sophia@gmail.com").isEmpty() && userRepository.findByEmail("sophia@shopio.com").isEmpty()) {
-            User customer = new User(
-                    "sophia",
-                    "sophia@gmail.com",
-                    "customer123",
-                    "Sophia Vance",
-                    "CUSTOMER"
-            );
-            customer.setPhone("+1 555-0142");
-            customer.setAddress("124 Mercer Street, Soho, New York, NY 10012");
-            userRepository.save(customer);
+        try {
+            if (userRepository.findByEmail("sophia@gmail.com").isEmpty() 
+                    && userRepository.findByEmail("sophia@shopio.com").isEmpty() 
+                    && userRepository.findByUsername("sophia").isEmpty()) {
+                User customer = new User(
+                        "sophia",
+                        "sophia@gmail.com",
+                        "customer123",
+                        "Sophia Vance",
+                        "CUSTOMER"
+                );
+                customer.setPhone("+1 555-0142");
+                customer.setAddress("124 Mercer Street, Soho, New York, NY 10012");
+                userRepository.save(customer);
+            }
+        } catch (Exception e) {
+            // Already seeded or exists
         }
     }
 
