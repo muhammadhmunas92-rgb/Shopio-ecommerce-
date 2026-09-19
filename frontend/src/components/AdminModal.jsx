@@ -29,10 +29,97 @@ import {
   fetchCategories 
 } from '../api/client';
 
-export default function AdminModal({ isOpen, onClose, onCatalogUpdated, onOpenTracking }) {
+const DEFAULT_DEMO_ORDERS = [
+  {
+    id: 101,
+    orderNumber: "FRM-260919-48291",
+    userFullName: "Sophia Vance",
+    userEmail: "sophia@gmail.com",
+    shippingAddress: "124 Mercer Street, Soho, New York, NY 10012",
+    contactPhone: "+1 555-0142",
+    status: "PROCESSING",
+    createdAt: "2026-09-19T10:15:00",
+    totalAmount: 349.99,
+    items: [
+      {
+        id: 1,
+        productName: "Sony WH-1000XM5 Wireless Noise-Canceling Headphones",
+        productModelNumber: "EL-SONY-01",
+        price: 349.99,
+        quantity: 1,
+        subtotal: 349.99,
+        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80"
+      }
+    ]
+  },
+  {
+    id: 102,
+    orderNumber: "FRM-260918-19284",
+    userFullName: "Liam Thorne",
+    userEmail: "liam.t@outlook.com",
+    shippingAddress: "88 Grand Avenue, Penthouse 4, Los Angeles, CA 90012",
+    contactPhone: "+1 555-0199",
+    status: "SHIPPED",
+    createdAt: "2026-09-18T16:30:00",
+    totalAmount: 189.98,
+    items: [
+      {
+        id: 2,
+        productName: "Nike Air Max 270 React Edition",
+        productModelNumber: "SH-AMX-27",
+        price: 129.99,
+        quantity: 1,
+        subtotal: 129.99,
+        imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 3,
+        productName: "Essential Streetwear Oversized Hoodie",
+        productModelNumber: "FS-HOD-01",
+        price: 59.99,
+        quantity: 1,
+        subtotal: 59.99,
+        imageUrl: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80"
+      }
+    ]
+  },
+  {
+    id: 103,
+    orderNumber: "FRM-260917-83921",
+    userFullName: "Emma Watson",
+    userEmail: "emma.w@gmail.com",
+    shippingAddress: "45 Beacon Street, Apt 3B, Boston, MA 02108",
+    contactPhone: "+1 555-0188",
+    status: "DELIVERED",
+    createdAt: "2026-09-17T11:45:00",
+    totalAmount: 239.00,
+    items: [
+      {
+        id: 4,
+        productName: "Ergonomic High-Back Breathable Mesh Chair",
+        productModelNumber: "FN-OFC-11",
+        price: 239.00,
+        quantity: 1,
+        subtotal: 239.00,
+        imageUrl: "https://images.unsplash.com/photo-1580481077197-27b37803615a?w=800&auto=format&fit=crop&q=80"
+      }
+    ]
+  }
+];
+
+export default function AdminModal({ 
+  isOpen, 
+  onClose, 
+  onCatalogUpdated, 
+  onOpenTracking,
+  catalogProducts = [],
+  initialOrders = []
+}) {
   const [activeTab, setActiveTab] = useState('products'); // 'products', 'new-product', 'orders'
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState(catalogProducts);
+  const [orders, setOrders] = useState(() => {
+    return initialOrders.length > 0 ? initialOrders : DEFAULT_DEMO_ORDERS;
+  });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
@@ -59,6 +146,22 @@ export default function AdminModal({ isOpen, onClose, onCatalogUpdated, onOpenTr
   const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
+    if (catalogProducts && catalogProducts.length > 0) {
+      setProducts(prev => prev.length === 0 ? catalogProducts : prev);
+    }
+  }, [catalogProducts]);
+
+  useEffect(() => {
+    if (initialOrders && initialOrders.length > 0) {
+      setOrders(prev => {
+        const seen = new Set(prev.map(o => o.orderNumber));
+        const newOnes = initialOrders.filter(o => !seen.has(o.orderNumber));
+        return newOnes.length > 0 ? [...newOnes, ...prev] : prev;
+      });
+    }
+  }, [initialOrders]);
+
+  useEffect(() => {
     if (isOpen) {
       loadAdminData();
     }
@@ -67,16 +170,68 @@ export default function AdminModal({ isOpen, onClose, onCatalogUpdated, onOpenTr
   const loadAdminData = async () => {
     try {
       setLoading(true);
-      const [prods, ords, cats] = await Promise.all([
-        fetchProducts(),
-        fetchAllOrders(),
-        fetchCategories()
-      ]);
-      setProducts(prods || []);
-      setOrders(ords || []);
-      setCategories(cats || []);
-    } catch (err) {
-      console.warn('Could not fetch admin data:', err);
+
+      // 1. Fetch products
+      try {
+        const prods = await fetchProducts();
+        if (prods && prods.length > 0) {
+          const backendNames = new Set(prods.map(p => (p.name || '').toLowerCase().trim()));
+          const extra = (catalogProducts || []).filter(p => !backendNames.has((p.name || '').toLowerCase().trim()));
+          setProducts([...prods, ...extra]);
+        } else if (catalogProducts && catalogProducts.length > 0) {
+          setProducts(catalogProducts);
+        }
+      } catch (err) {
+        console.warn('Could not fetch backend products, using catalog fallback:', err);
+        if (catalogProducts && catalogProducts.length > 0) {
+          setProducts(catalogProducts);
+        }
+      }
+
+      // 2. Fetch orders
+      try {
+        const ords = await fetchAllOrders();
+        const seenOrderNumbers = new Set();
+        const combined = [];
+
+        // Priority 1: User placed orders in current session
+        for (const o of (initialOrders || [])) {
+          if (o?.orderNumber && !seenOrderNumbers.has(o.orderNumber)) {
+            seenOrderNumbers.add(o.orderNumber);
+            combined.push(o);
+          }
+        }
+        // Priority 2: Backend persisted orders
+        for (const o of (ords || [])) {
+          if (o?.orderNumber && !seenOrderNumbers.has(o.orderNumber)) {
+            seenOrderNumbers.add(o.orderNumber);
+            combined.push(o);
+          }
+        }
+        // Priority 3: Default demonstration orders
+        for (const o of DEFAULT_DEMO_ORDERS) {
+          if (o?.orderNumber && !seenOrderNumbers.has(o.orderNumber)) {
+            seenOrderNumbers.add(o.orderNumber);
+            combined.push(o);
+          }
+        }
+        setOrders(combined);
+      } catch (err) {
+        console.warn('Could not fetch backend orders, using local/demo orders:', err);
+        const fallback = [...(initialOrders || [])];
+        const seen = new Set(fallback.map(o => o.orderNumber));
+        for (const o of DEFAULT_DEMO_ORDERS) {
+          if (!seen.has(o.orderNumber)) fallback.push(o);
+        }
+        setOrders(fallback);
+      }
+
+      // 3. Fetch categories
+      try {
+        const cats = await fetchCategories();
+        if (cats && cats.length > 0) setCategories(cats);
+      } catch (err) {}
+
     } finally {
       setLoading(false);
     }

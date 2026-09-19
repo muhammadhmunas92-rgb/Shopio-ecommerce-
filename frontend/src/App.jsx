@@ -473,13 +473,45 @@ function ShopioStore() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackingOrder, setTrackingOrder] = useState(null);
-  const [userOrders, setUserOrders] = useState([]);
+  const [userOrders, setUserOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopio_orders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveOrder = (newOrd) => {
+    if (!newOrd) return;
+    setUserOrders(prev => {
+      const updated = [newOrd, ...prev.filter(o => o.orderNumber !== newOrd.orderNumber)];
+      try {
+        localStorage.setItem('shopio_orders', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   const loadUserOrders = async () => {
     if (user?.id) {
       try {
         const orders = await fetchUserOrders(user.id);
-        setUserOrders(orders);
+        if (orders && orders.length > 0) {
+          setUserOrders(prev => {
+            const combined = [...orders, ...prev];
+            const seen = new Set();
+            const unique = combined.filter(o => {
+              if (!o.orderNumber || seen.has(o.orderNumber)) return false;
+              seen.add(o.orderNumber);
+              return true;
+            });
+            try {
+              localStorage.setItem('shopio_orders', JSON.stringify(unique));
+            } catch (e) {}
+            return unique;
+          });
+        }
       } catch (err) {
         console.warn('Could not fetch user orders:', err);
       }
@@ -609,7 +641,7 @@ function ShopioStore() {
           loadProducts();
           loadUserOrders();
           if (newOrd) {
-            setUserOrders(prev => [newOrd, ...prev]);
+            saveOrder(newOrd);
           }
         }}
         onOpenTracking={(newOrd) => handleOpenTracking(newOrd)}
@@ -635,6 +667,8 @@ function ShopioStore() {
         onClose={() => setIsAdminOpen(false)}
         onCatalogUpdated={loadProducts}
         onOpenTracking={(ord) => handleOpenTracking(ord)}
+        catalogProducts={products}
+        initialOrders={userOrders}
       />
 
       {/* Dedicated Real-Time Order Tracking Modal */}
