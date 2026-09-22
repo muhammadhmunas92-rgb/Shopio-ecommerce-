@@ -109,6 +109,22 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void seedProducts() {
+        // Auto-heal any broken image URLs in existing database records
+        productRepository.findByModelNumber("FN-CHR-09").ifPresent(p -> {
+            if (p.getImageUrl() != null && p.getImageUrl().contains("photo-1580481077195")) {
+                p.setImageUrl("https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80");
+                p.setImageThumbnailUrl("https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80");
+                productRepository.save(p);
+            }
+        });
+        productRepository.findByModelNumber("BT-MST-02").ifPresent(p -> {
+            if (p.getImageUrl() != null && p.getImageUrl().contains("photo-1608248597359")) {
+                p.setImageUrl("https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80");
+                p.setImageThumbnailUrl("https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80");
+                productRepository.save(p);
+            }
+        });
+
         if (productRepository.count() >= 20) {
             return; // already seeded
         }
@@ -163,41 +179,41 @@ public class DataLoader implements CommandLineRunner {
         saveProductIfMissing("Runner Elite Cloud Foam Athletic Shoes", "SH-RUN-08",
                 "Engineered seamless knit upper with ultra-responsive dual-density foam midsoles for supreme street and athletic performance.",
                 new BigDecimal("119.00"), 45, "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800&auto=format&fit=crop&q=80",
-                "Triple White", "NEW", "TRENDING", true, shoes);
+                "Cloud Gray / Neon", "HOT", "TRENDING", true, shoes);
 
         saveProductIfMissing("Artisan Suede Chelsea Boots", "SH-BOT-09",
-                "Handcrafted water-resistant calfskin suede with flexible elastic side gussets and stacked leather crepe outsoles.",
+                "Hand-stitched premium Italian suede with elasticized side gussets and cushioned Goodyear welted crepe outsoles.",
                 new BigDecimal("185.00"), 25, "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=800&auto=format&fit=crop&q=80",
-                "Sand Taupe", "PREMIUM", "LATEST_DROPS", true, shoes);
+                "Tobacco Suede", "POPULAR", "TRENDING", true, shoes);
 
         saveProductIfMissing("Essential Streetwear Oversized Hoodie", "FS-HOD-01",
-                "480 GSM ultra-heavyweight brushed French terry cotton with relaxed dropped shoulders and double-layered hood.",
+                "480 GSM ultra-heavyweight brushed French terry cotton. Drop-shoulder relaxed silhouette with double-layered thermal hood.",
                 new BigDecimal("59.99"), 60, "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80",
-                "Bone Cream", "BESTSELLER", "TRENDING", true, fashion);
+                "Washed Charcoal", "BESTSELLER", "TRENDING", true, fashion);
 
         saveProductIfMissing("Classic Warm Fleece Pullover Hoodie", "FS-HOD-02",
-                "Plush organic cotton fleece with kangaroo front pouch pocket, reinforced stitching, and timeless streetwear fit.",
+                "Premium combed cotton blend with brushed fleece lining, kangaroo pouch pocket, and ribbed athletic cuffs.",
                 new BigDecimal("59.99"), 55, "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=800&auto=format&fit=crop&q=80",
-                "Heather Gray", "POPULAR", "TRENDING", true, fashion);
+                "Vintage Oatmeal", "HOT", "TRENDING", true, fashion);
 
         saveProductIfMissing("Safari Linen Utility Overshirt", "MN-LIN-05",
-                "Breathable organic linen-cotton blend overshirt with horn buttons and utility chest pockets. Tailored casual silhouette.",
+                "100% breathable pure Belgian flax linen with dual gusseted chest flap pockets and horn-effect buttons.",
                 new BigDecimal("95.00"), 45, "https://images.unsplash.com/photo-1516826957135-700dedea698c?w=800&auto=format&fit=crop&q=80",
-                "Sand Dune", "NEW", "LATEST_DROPS", true, fashion);
+                "Sand Dune", "-10%", "TRENDING", true, fashion);
 
         saveProductIfMissing("Merino Wool Ribbed Knit Sweater", "WM-KNT-06",
-                "Ultra-soft 100% pure merino wool crewneck sweater with ribbed cuffs and relaxed dropped shoulders.",
+                "Extra-fine 19.5-micron Australian merino wool with chunky vertical ribbing, mock neckline, and seamless tailored cuffs.",
                 new BigDecimal("115.00"), 40, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-                "Oatmeal Cream", "NEW", "LATEST_DROPS", true, fashion);
+                "Dusty Rose", "NEW", "TRENDING", true, fashion);
 
         saveProductIfMissing("Minimalist Graphic Studio Tee", "FS-TEE-07",
-                "240 GSM pre-shrunk combed organic cotton jersey with subtle typographic chest print and relaxed boxy cut.",
+                "Heavyweight 240 GSM organic ring-spun cotton. High-density typographic chest branding with relaxed boxy drape.",
                 new BigDecimal("34.00"), 70, "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80",
                 "Off-White", "HOT", "TRENDING", true, fashion);
 
         saveProductIfMissing("Nordic Bouclé Curved Lounge Armchair", "FN-CHR-09",
                 "Sculptural curved silhouette upholstered in plush tactile bouclé fabric with solid matte black steel legs.",
-                new BigDecimal("289.00"), 15, "https://images.unsplash.com/photo-1580481077195-c9c4c7847c25?w=800&auto=format&fit=crop&q=80",
+                new BigDecimal("289.00"), 15, "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80",
                 "Warm Ivory", "NEW", "TRENDING", true, furniture);
 
         saveProductIfMissing("Minimalist Solid White Oak Coffee Table", "FN-TBL-10",
@@ -237,7 +253,7 @@ public class DataLoader implements CommandLineRunner {
 
         saveProductIfMissing("Hydrating Botanical Rose Facial Mist", "BT-MST-02",
                 "Distilled Damascus rose petal water infused with soothing aloe vera and witch hazel to instantly tone and refresh skin.",
-                new BigDecimal("32.00"), 50, "https://images.unsplash.com/photo-1608248597359-0026a71d7943?w=800&auto=format&fit=crop&q=80",
+                new BigDecimal("32.00"), 50, "https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80",
                 "Rose Mist", "NEW", "TRENDING", true, beauty);
 
         saveProductIfMissing("Heritage Chronograph Classic Watch", "WT-HER-03",

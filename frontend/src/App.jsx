@@ -245,7 +245,7 @@ const INITIAL_DEMO_PRODUCTS = [
     description: "Sculptural curved silhouette upholstered in plush tactile bouclé fabric with solid matte black steel legs. Modern statement chair.",
     price: 289.00,
     stockQuantity: 15,
-    imageUrl: "https://images.unsplash.com/photo-1580481077195-c9c4c7847c25?w=800&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80",
     color: "Warm Ivory",
     badge: "NEW",
     collectionTag: "TRENDING",
@@ -369,7 +369,7 @@ const INITIAL_DEMO_PRODUCTS = [
     description: "Distilled Damascus rose petal water infused with soothing aloe vera and witch hazel to instantly refresh, tone, and rehydrate thirsty skin throughout the day.",
     price: 32.00,
     stockQuantity: 50,
-    imageUrl: "https://images.unsplash.com/photo-1608248597359-0026a71d7943?w=800&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80",
     color: "Rose Mist",
     badge: "NEW",
     collectionTag: "TRENDING",
@@ -533,25 +533,38 @@ function ShopioStore() {
     setIsTrackingOpen(true);
   };
 
+  const sanitizeProductList = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.map(p => {
+      let img = p.imageUrl || '';
+      if (!img || img.includes('photo-1580481077195')) {
+        img = 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80';
+      } else if (img.includes('photo-1608248597359')) {
+        img = 'https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80';
+      }
+      return { ...p, imageUrl: img };
+    });
+  };
+
   const loadProducts = async () => {
     try {
       const data = await fetchProducts();
       if (data && data.length > 0) {
         // If backend has products, combine or prioritize backend while retaining full variety
         if (data.length >= INITIAL_DEMO_PRODUCTS.length) {
-          setProducts(data);
+          setProducts(sanitizeProductList(data));
         } else {
           // Merge so that user always sees the complete full catalog of 28+ products
           const existingIds = new Set(data.map(d => (d.name || '').toLowerCase().trim()));
           const extra = INITIAL_DEMO_PRODUCTS.filter(p => !existingIds.has((p.name || '').toLowerCase().trim()));
-          setProducts([...data, ...extra]);
+          setProducts(sanitizeProductList([...data, ...extra]));
         }
       } else {
-        setProducts(INITIAL_DEMO_PRODUCTS);
+        setProducts(sanitizeProductList(INITIAL_DEMO_PRODUCTS));
       }
     } catch (err) {
       console.warn('Backend unavailable, using rich pre-seeded catalog:', err);
-      setProducts(INITIAL_DEMO_PRODUCTS);
+      setProducts(sanitizeProductList(INITIAL_DEMO_PRODUCTS));
     }
   };
 

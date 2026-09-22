@@ -235,6 +235,16 @@ export default function TrendingProducts({
                   <img
                     src={product.imageUrl}
                     alt={product.name}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      if ((product.name || '').includes('Armchair') || product.category?.slug === 'furniture') {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80';
+                      } else if ((product.name || '').includes('Mist') || product.category?.slug === 'beauty') {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80';
+                      } else {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
+                      }
+                    }}
                     className="w-full h-[160px] sm:h-[190px] object-contain group-hover:scale-105 transition duration-500 drop-shadow-sm"
                   />
 
