@@ -113,14 +113,14 @@ public class DataLoader implements CommandLineRunner {
         productRepository.findByModelNumber("FN-CHR-09").ifPresent(p -> {
             if (p.getImageUrl() != null && p.getImageUrl().contains("photo-1580481077195")) {
                 p.setImageUrl("https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80");
-                p.setImageThumbnailUrl("https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80");
+                p.setSecondaryImageUrl("https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80");
                 productRepository.save(p);
             }
         });
         productRepository.findByModelNumber("BT-MST-02").ifPresent(p -> {
             if (p.getImageUrl() != null && p.getImageUrl().contains("photo-1608248597359")) {
                 p.setImageUrl("https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80");
-                p.setImageThumbnailUrl("https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80");
+                p.setSecondaryImageUrl("https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80");
                 productRepository.save(p);
             }
         });
