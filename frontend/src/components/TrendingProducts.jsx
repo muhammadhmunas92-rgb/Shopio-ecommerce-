@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Heart, ShoppingBag, Star, Eye, Sparkles, X, Search } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Eye, Sparkles, X, Search, Tag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { getProductPricing } from '../utils/pricing';
 
 export default function TrendingProducts({ 
   products, 
@@ -64,13 +65,22 @@ export default function TrendingProducts({
     // 2. Filter by Active Category if not ALL
     if (activeCategory !== 'ALL') {
       const searchCat = activeCategory.toLowerCase();
-      result = result.filter(p => {
-        const catSlug = (p.category?.slug || p.categorySlug || '').toLowerCase();
-        if (searchCat === 'fashion') {
+      if (searchCat === 'sale' || searchCat === 'summer-sale') {
+        result = result.filter(p => {
+          const pricing = getProductPricing(p);
+          return pricing.hasDiscount || p.collectionTag?.toLowerCase() === 'sale';
+        });
+      } else if (searchCat === 'fashion') {
+        result = result.filter(p => {
+          const catSlug = (p.category?.slug || p.categorySlug || '').toLowerCase();
           return catSlug === 'fashion' || catSlug === 'men' || catSlug === 'women';
-        }
-        return catSlug === searchCat || p.collectionTag?.toLowerCase() === searchCat;
-      });
+        });
+      } else {
+        result = result.filter(p => {
+          const catSlug = (p.category?.slug || p.categorySlug || '').toLowerCase();
+          return catSlug === searchCat || p.collectionTag?.toLowerCase() === searchCat;
+        });
+      }
     }
 
     return result;
@@ -78,6 +88,7 @@ export default function TrendingProducts({
 
   const filterTabs = [
     { id: 'ALL', label: 'All Products' },
+    { id: 'sale', label: 'Summer Sale (Up to 50% Off)' },
     { id: 'electronics', label: 'Electronics' },
     { id: 'fashion', label: 'Fashion & Hoodies' },
     { id: 'shoes', label: 'Shoes & Sneakers' },
@@ -163,6 +174,28 @@ export default function TrendingProducts({
         </div>
       )}
 
+      {/* Summer Sale Active Notification Banner */}
+      {(activeCategory.toLowerCase() === 'sale' || activeCategory.toLowerCase() === 'summer-sale') && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 via-rose-50 to-orange-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center space-x-3">
+            <span className="bg-rose-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 shadow-xs">
+              Summer Sale Active
+            </span>
+            <div className="text-xs text-neutral-800">
+              <span className="font-bold text-neutral-900">Up to 50% Off On Selected Items. </span>
+              <span className="text-neutral-600">Both original retail price (strikethrough) and discounted checkout prices are shown.</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTabClick('ALL')}
+            className="self-start sm:self-center px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-semibold border border-neutral-300 transition shadow-xs cursor-pointer shrink-0"
+          >
+            Show All Products
+          </button>
+        </div>
+      )}
+
       {/* No Results Fallback */}
       {displayList.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-3xl border border-neutral-200 p-8 shadow-xs space-y-4">
@@ -191,6 +224,7 @@ export default function TrendingProducts({
           {displayList.map((product) => {
             const isFav = isFavorite(product.id);
             const catName = product.category?.name || product.categoryName || 'Product';
+            const pricing = getProductPricing(product);
 
             return (
               <div
@@ -199,11 +233,13 @@ export default function TrendingProducts({
               >
                 {/* Badge & Wishlist Button */}
                 <div className="flex justify-between items-center z-10">
-                  {product.badge ? (
+                  {pricing.hasDiscount ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-rose-600 text-white shadow-xs">
+                      -{pricing.discountPercent}% OFF
+                    </span>
+                  ) : product.badge ? (
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider ${
-                      product.badge.includes('-')
-                        ? 'bg-rose-100 text-rose-700'
-                        : product.badge === 'NEW'
+                      product.badge === 'NEW'
                         ? 'bg-emerald-100 text-emerald-800'
                         : product.badge === 'BESTSELLER'
                         ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300'
@@ -297,22 +333,31 @@ export default function TrendingProducts({
                   </div>
 
                   {/* Price & Add to Bag */}
-                  <div className="pt-2 flex justify-between items-center">
-                    <div className="flex items-baseline space-x-1.5">
-                      <span className="text-sm sm:text-base font-extrabold text-neutral-900">
-                        ${Number(product.price).toFixed(2)}
-                      </span>
-                      {product.badge?.includes('-') && (
-                        <span className="text-xs text-neutral-400 line-through">
-                          ${(Number(product.price) * 1.25).toFixed(2)}
+                  <div className="pt-2 flex justify-between items-end">
+                    <div className="flex flex-col">
+                      <div className="flex items-baseline space-x-1.5 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-neutral-900">
+                          ${pricing.currentPrice.toFixed(2)}
                         </span>
+                        {pricing.hasDiscount && (
+                          <span className="text-xs text-neutral-400 line-through font-normal">
+                            ${pricing.originalPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {pricing.hasDiscount && (
+                        <div className="mt-0.5">
+                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
+                            Save ${pricing.savings.toFixed(2)} ({pricing.discountPercent}% OFF)
+                          </span>
+                        </div>
                       )}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => addItem(product.id, 1, product)}
-                      className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 transition active:scale-95 cursor-pointer"
+                      className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 transition active:scale-95 cursor-pointer shrink-0"
                       title="Add to Shopping Bag"
                     >
                       <ShoppingBag size={15} />

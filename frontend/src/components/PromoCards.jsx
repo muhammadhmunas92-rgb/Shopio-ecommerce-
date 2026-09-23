@@ -20,8 +20,8 @@ export default function PromoCards({ onSelectPromoCategory }) {
             </p>
             <div className="pt-2">
               <button
-                onClick={() => onSelectPromoCategory('bags')}
-                className="px-6 py-2.5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold uppercase tracking-wider transition active:scale-95 shadow-sm"
+                onClick={() => onSelectPromoCategory('sale')}
+                className="px-6 py-2.5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold uppercase tracking-wider transition active:scale-95 shadow-sm cursor-pointer"
               >
                 Shop Now
               </button>

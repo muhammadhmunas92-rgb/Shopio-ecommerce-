@@ -200,8 +200,8 @@ const INITIAL_DEMO_PRODUCTS = [
     stockQuantity: 45,
     imageUrl: "https://images.unsplash.com/photo-1516826957135-700dedea698c?w=800&auto=format&fit=crop&q=80",
     color: "Sand Dune",
-    badge: "NEW",
-    collectionTag: "LATEST_DROPS",
+    badge: "-10%",
+    collectionTag: "TRENDING",
     averageRating: 4.9,
     reviewCount: 48,
     category: { slug: "fashion", name: "Fashion" }
@@ -419,7 +419,7 @@ const INITIAL_DEMO_PRODUCTS = [
     stockQuantity: 28,
     imageUrl: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&auto=format&fit=crop&q=80",
     color: "Caramel Tan",
-    badge: "HOT",
+    badge: "-50%",
     collectionTag: "TRENDING",
     averageRating: 4.8,
     reviewCount: 39,
@@ -434,7 +434,7 @@ const INITIAL_DEMO_PRODUCTS = [
     stockQuantity: 32,
     imageUrl: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&auto=format&fit=crop&q=80",
     color: "Cognac Brown",
-    badge: "POPULAR",
+    badge: "-25%",
     collectionTag: "TRENDING",
     averageRating: 4.9,
     reviewCount: 48,
@@ -678,8 +678,13 @@ function ShopioStore() {
       <AdminModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
-        onCatalogUpdated={loadProducts}
         onOpenTracking={(ord) => handleOpenTracking(ord)}
+        onCatalogUpdated={(updatedProd) => {
+          if (updatedProd?.id) {
+            setProducts(prev => prev.map(p => p.id === updatedProd.id ? { ...p, ...updatedProd } : p));
+          }
+          loadProducts();
+        }}
         catalogProducts={products}
         initialOrders={userOrders}
       />

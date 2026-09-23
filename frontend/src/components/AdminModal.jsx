@@ -17,7 +17,10 @@ import {
   Calendar, 
   DollarSign,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Percent,
+  Tag,
+  Sparkles
 } from 'lucide-react';
 import { 
   fetchProducts, 
@@ -28,6 +31,7 @@ import {
   updateOrderStatus,
   fetchCategories 
 } from '../api/client';
+import { getProductPricing } from '../utils/pricing';
 
 const DEFAULT_DEMO_ORDERS = [
   {
@@ -144,6 +148,92 @@ export default function AdminModal({
 
   // Editing product state
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // Dedicated discount modal state
+  const [discountTargetProduct, setDiscountTargetProduct] = useState(null);
+  const [selectedDiscountPercent, setSelectedDiscountPercent] = useState(20);
+  const [customPercent, setCustomPercent] = useState('');
+  const [discountMode, setDiscountMode] = useState('discount_from_current'); // 'discount_from_current' or 'mark_current_as_discounted'
+
+  const handleOpenDiscountModal = (prod) => {
+    setDiscountTargetProduct(prod);
+    const pricing = getProductPricing(prod);
+    if (pricing.hasDiscount && pricing.discountPercent > 0) {
+      setSelectedDiscountPercent(pricing.discountPercent);
+    } else {
+      setSelectedDiscountPercent(20);
+    }
+    setCustomPercent('');
+    setDiscountMode('discount_from_current');
+  };
+
+  const effectivePercent = customPercent !== '' 
+    ? (parseInt(customPercent, 10) || 0) 
+    : selectedDiscountPercent;
+
+  let previewSellingPrice = 0;
+  let previewOriginalPrice = 0;
+  let previewSavings = 0;
+
+  if (discountTargetProduct) {
+    const basePrice = Number(discountTargetProduct.price) || 0;
+    if (effectivePercent <= 0) {
+      previewSellingPrice = basePrice;
+      previewOriginalPrice = basePrice;
+      previewSavings = 0;
+    } else if (discountMode === 'discount_from_current') {
+      previewOriginalPrice = basePrice;
+      previewSellingPrice = Number((basePrice * (1 - effectivePercent / 100)).toFixed(2));
+      previewSavings = Number((previewOriginalPrice - previewSellingPrice).toFixed(2));
+    } else {
+      previewSellingPrice = basePrice;
+      previewOriginalPrice = Number((basePrice / (1 - effectivePercent / 100)).toFixed(2));
+      previewSavings = Number((previewOriginalPrice - previewSellingPrice).toFixed(2));
+    }
+  }
+
+  const handleApplyProductDiscount = async () => {
+    if (!discountTargetProduct) return;
+    try {
+      setLoading(true);
+      const updatedBadge = effectivePercent > 0 ? `-${effectivePercent}%` : 'POPULAR';
+      const updatedCollectionTag = effectivePercent > 0 ? 'SALE' : (discountTargetProduct.collectionTag || 'TRENDING');
+      const updatedPrice = previewSellingPrice;
+
+      const payload = {
+        ...discountTargetProduct,
+        price: updatedPrice,
+        badge: updatedBadge,
+        collectionTag: updatedCollectionTag,
+        categoryId: discountTargetProduct.categoryId || discountTargetProduct.category?.id || 1
+      };
+
+      try {
+        await updateProduct(discountTargetProduct.id, payload);
+      } catch (apiErr) {
+        console.warn('Backend updateProduct fallback to local state:', apiErr);
+      }
+
+      setProducts(prev => prev.map(p => p.id === discountTargetProduct.id ? { ...p, ...payload } : p));
+      
+      if (onCatalogUpdated) {
+        onCatalogUpdated({ ...discountTargetProduct, ...payload });
+      }
+
+      setStatusMsg({
+        text: effectivePercent > 0
+          ? `Applied ${effectivePercent}% discount to "${discountTargetProduct.name}"! Selling price is now $${updatedPrice.toFixed(2)}.`
+          : `Removed discount from "${discountTargetProduct.name}". Price reset to regular $${updatedPrice.toFixed(2)}.`,
+        type: 'success'
+      });
+
+      setDiscountTargetProduct(null);
+    } catch (err) {
+      setStatusMsg({ text: 'Failed to apply discount.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (catalogProducts && catalogProducts.length > 0) {
@@ -434,36 +524,65 @@ export default function AdminModal({
             </div>
 
             <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
-              {products.map((p) => (
-                <div key={p.id} className="p-3.5 bg-neutral-50 hover:bg-white rounded-2xl border border-neutral-200/80 flex items-center justify-between shadow-xs transition">
-                  <div className="flex items-center space-x-3.5">
-                    <img src={p.imageUrl} alt={p.name} className="w-12 h-12 object-contain rounded-xl bg-white border border-neutral-200 p-1" />
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-neutral-900">{p.name}</h4>
-                      <p className="text-[11px] text-neutral-500">
-                        {p.modelNumber} • <span className="font-bold text-neutral-800">${Number(p.price).toFixed(2)}</span> • Stock: <span className="font-semibold">{p.stockQuantity}</span> • <span className="uppercase text-[10px] text-amber-700 font-bold">{p.category?.name || p.categoryName || 'General'}</span>
-                      </p>
+              {products.map((p) => {
+                const pricing = getProductPricing(p);
+                return (
+                  <div key={p.id} className="p-3.5 bg-neutral-50 hover:bg-white rounded-2xl border border-neutral-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition">
+                    <div className="flex items-center space-x-3.5">
+                      <img src={p.imageUrl} alt={p.name} className="w-12 h-12 object-contain rounded-xl bg-white border border-neutral-200 p-1 shrink-0" />
+                      <div>
+                        <div className="flex items-center space-x-2 flex-wrap">
+                          <h4 className="text-xs sm:text-sm font-bold text-neutral-900">{p.name}</h4>
+                          {pricing.hasDiscount ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 ring-1 ring-rose-200">
+                              -{pricing.discountPercent}% OFF
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-200/70 text-neutral-600">
+                              Full Price
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-neutral-500 mt-0.5">
+                          {p.modelNumber} • 
+                          <span className="font-bold text-neutral-900 ml-1">${pricing.currentPrice.toFixed(2)}</span>
+                          {pricing.hasDiscount && (
+                            <span className="line-through text-neutral-400 ml-1 text-[10px]">${pricing.originalPrice.toFixed(2)}</span>
+                          )}
+                          • Stock: <span className="font-semibold text-neutral-700">{p.stockQuantity}</span>
+                          • <span className="uppercase text-[10px] text-amber-700 font-bold">{p.category?.name || p.categoryName || 'General'}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDiscountModal(p)}
+                        className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+                        title="Apply or modify discount for this product"
+                      >
+                        <Percent size={13} />
+                        <span>Discount</span>
+                      </button>
+                      <button
+                        onClick={() => setEditingProduct(p)}
+                        className="p-2 rounded-xl hover:bg-neutral-200/70 text-neutral-600 hover:text-neutral-900 transition cursor-pointer"
+                        title="Edit Product Details"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="p-2 rounded-xl hover:bg-rose-100 text-neutral-400 hover:text-rose-600 transition cursor-pointer"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setEditingProduct(p)}
-                      className="p-2 rounded-xl hover:bg-neutral-200/70 text-neutral-600 hover:text-neutral-900 transition cursor-pointer"
-                      title="Edit Product"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(p.id)}
-                      className="p-2 rounded-xl hover:bg-rose-100 text-neutral-400 hover:text-rose-600 transition cursor-pointer"
-                      title="Delete Product"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -539,6 +658,59 @@ export default function AdminModal({
                   onChange={(e) => setEditingProduct({ ...editingProduct, badge: e.target.value })}
                   className="w-full text-xs p-2.5 bg-white border border-neutral-200 rounded-xl outline-none focus:border-neutral-900"
                 />
+              </div>
+            </div>
+
+            {/* Quick Discount Presets Bar in Edit Form */}
+            <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200/80">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-neutral-800 flex items-center space-x-1.5">
+                  <Percent size={13} className="text-rose-600" />
+                  <span>Apply Promotional Discount</span>
+                </span>
+                <span className="text-[10px] font-semibold text-rose-700 bg-white px-2 py-0.5 rounded-full border border-rose-200">
+                  Current Badge: {editingProduct.badge || 'None'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Full Price (0%)', pct: 0 },
+                  { label: '10% OFF', pct: 10 },
+                  { label: '15% OFF', pct: 15 },
+                  { label: '20% OFF', pct: 20 },
+                  { label: '25% OFF', pct: 25 },
+                  { label: '30% OFF', pct: 30 },
+                  { label: '50% OFF (Summer Sale)', pct: 50 }
+                ].map(preset => (
+                  <button
+                    key={preset.pct}
+                    type="button"
+                    onClick={() => {
+                      if (preset.pct === 0) {
+                        const currentBadge = editingProduct.badge || '';
+                        const cleanBadge = currentBadge.startsWith('-') ? 'POPULAR' : currentBadge;
+                        setEditingProduct({
+                          ...editingProduct,
+                          badge: cleanBadge,
+                          collectionTag: 'TRENDING'
+                        });
+                      } else {
+                        setEditingProduct({
+                          ...editingProduct,
+                          badge: `-${preset.pct}%`,
+                          collectionTag: 'SALE'
+                        });
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                      editingProduct.badge === `-${preset.pct}%` || (preset.pct === 0 && !editingProduct.badge?.startsWith('-'))
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-white hover:bg-rose-100 text-rose-800 border-rose-200'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -658,6 +830,57 @@ export default function AdminModal({
                   className="w-full text-xs p-2.5 bg-white border border-neutral-200 rounded-xl outline-none focus:border-neutral-900"
                   placeholder="NEW / HOT / -20%"
                 />
+              </div>
+            </div>
+
+            {/* Quick Discount Presets Bar in New Product Form */}
+            <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200/80">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-neutral-800 flex items-center space-x-1.5">
+                  <Percent size={13} className="text-rose-600" />
+                  <span>Initial Promotional Discount</span>
+                </span>
+                <span className="text-[10px] font-semibold text-rose-700 bg-white px-2 py-0.5 rounded-full border border-rose-200">
+                  Badge: {newProd.badge || 'NEW'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Full Price (0%)', pct: 0 },
+                  { label: '10% OFF', pct: 10 },
+                  { label: '15% OFF', pct: 15 },
+                  { label: '20% OFF', pct: 20 },
+                  { label: '25% OFF', pct: 25 },
+                  { label: '30% OFF', pct: 30 },
+                  { label: '50% OFF (Summer Sale)', pct: 50 }
+                ].map(preset => (
+                  <button
+                    key={preset.pct}
+                    type="button"
+                    onClick={() => {
+                      if (preset.pct === 0) {
+                        setNewProd({
+                          ...newProd,
+                          badge: 'NEW',
+                          collectionTag: 'TRENDING'
+                        });
+                      } else {
+                        setNewProd({
+                          ...newProd,
+                          badge: `-${preset.pct}%`,
+                          collectionTag: 'SALE'
+                        });
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                      newProd.badge === `-${preset.pct}%` || (preset.pct === 0 && !newProd.badge?.startsWith('-'))
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-white hover:bg-rose-100 text-rose-800 border-rose-200'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -859,6 +1082,208 @@ export default function AdminModal({
               </div>
             )}
 
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* DEDICATED DISCOUNT MANAGER MODAL FOR SPECIFIC PRODUCT */}
+        {/* ========================================================= */}
+        {discountTargetProduct && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-neutral-200 space-y-5">
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2.5 rounded-2xl bg-rose-100 text-rose-700">
+                    <Percent size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-neutral-900">
+                      Apply Product Discount
+                    </h3>
+                    <p className="text-xs text-neutral-500">
+                      Configure promotional price and discount badge for this specific item
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDiscountTargetProduct(null)}
+                  className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Target Product Summary Card */}
+              <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/70 flex items-center space-x-3.5">
+                <img
+                  src={discountTargetProduct.imageUrl}
+                  alt={discountTargetProduct.name}
+                  className="w-14 h-14 object-contain rounded-xl bg-white border border-neutral-200 p-1 shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
+                    {discountTargetProduct.name}
+                  </h4>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    Model: <span className="font-mono text-neutral-800 font-medium">{discountTargetProduct.modelNumber}</span> • Base Price: <span className="font-bold text-neutral-900">${Number(discountTargetProduct.price).toFixed(2)}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Discount Presets */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-2">
+                  Select Discount Rate
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[0, 10, 15, 20, 25, 30, 40, 50].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDiscountPercent(rate);
+                        setCustomPercent('');
+                      }}
+                      className={`py-2 px-1 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        selectedDiscountPercent === rate && customPercent === ''
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                          : 'bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-200'
+                      }`}
+                    >
+                      {rate === 0 ? 'Full Price (0%)' : `${rate}% OFF`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Percentage Input */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  Or Enter Custom Discount Percentage (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="95"
+                    placeholder="e.g. 35"
+                    value={customPercent}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomPercent(val);
+                      if (val !== '') {
+                        setSelectedDiscountPercent(parseInt(val, 10) || 0);
+                      }
+                    }}
+                    className="w-full text-xs p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-neutral-900 pl-3 pr-8 font-medium"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-neutral-400 font-bold">%</span>
+                </div>
+              </div>
+
+              {/* Discount Application Mode */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-neutral-700">
+                  Discount Application Strategy
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label className={`p-2.5 rounded-xl border cursor-pointer flex flex-col justify-between transition ${
+                    discountMode === 'discount_from_current'
+                      ? 'bg-rose-50/50 border-rose-300 ring-1 ring-rose-200 text-neutral-900'
+                      : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="discountMode"
+                        checked={discountMode === 'discount_from_current'}
+                        onChange={() => setDiscountMode('discount_from_current')}
+                        className="text-rose-600 focus:ring-rose-500"
+                      />
+                      <span className="font-bold">Slash Current Price</span>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-1 pl-5">
+                      Take {effectivePercent}% off current ${Number(discountTargetProduct.price).toFixed(2)}
+                    </p>
+                  </label>
+
+                  <label className={`p-2.5 rounded-xl border cursor-pointer flex flex-col justify-between transition ${
+                    discountMode === 'mark_current_as_discounted'
+                      ? 'bg-rose-50/50 border-rose-300 ring-1 ring-rose-200 text-neutral-900'
+                      : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="discountMode"
+                        checked={discountMode === 'mark_current_as_discounted'}
+                        onChange={() => setDiscountMode('mark_current_as_discounted')}
+                        className="text-rose-600 focus:ring-rose-500"
+                      />
+                      <span className="font-bold">Keep Price &amp; Mark Down</span>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-1 pl-5">
+                      Keep ${Number(discountTargetProduct.price).toFixed(2)} as sale price and compute original
+                    </p>
+                  </label>
+                </div>
+              </div>
+
+              {/* Live Calculation Preview Card */}
+              <div className="p-4 bg-gradient-to-br from-amber-50/70 via-rose-50/50 to-orange-50/70 rounded-2xl border border-rose-200 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-rose-800">
+                    Live Customer Storefront Preview
+                  </span>
+                  <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded-full border border-rose-200 text-rose-700">
+                    Badge: {effectivePercent > 0 ? `-${effectivePercent}%` : 'Full Price'}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline space-x-3 pt-1">
+                  <span className="text-xl sm:text-2xl font-black text-neutral-900">
+                    ${previewSellingPrice.toFixed(2)}
+                  </span>
+                  {effectivePercent > 0 && (
+                    <span className="text-sm text-neutral-400 line-through">
+                      ${previewOriginalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+
+                {effectivePercent > 0 ? (
+                  <p className="text-xs text-rose-700 font-semibold">
+                    Customer saves ${previewSavings.toFixed(2)} ({effectivePercent}% OFF)
+                  </p>
+                ) : (
+                  <p className="text-xs text-neutral-500">
+                    No discount active. Item will be sold at standard regular retail price.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDiscountTargetProduct(null)}
+                  className="w-1/3 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-100 text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleApplyProductDiscount}
+                  className="w-2/3 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer shadow-md active:scale-95"
+                >
+                  {loading ? 'Applying...' : 'Apply & Publish Discount'}
+                </button>
+              </div>
+
+            </div>
           </div>
         )}
 

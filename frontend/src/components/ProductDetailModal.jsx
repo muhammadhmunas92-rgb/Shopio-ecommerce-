@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { fetchReviews, submitReview } from '../api/client';
+import { getProductPricing } from '../utils/pricing';
 
 export default function ProductDetailModal({ product, onClose }) {
   const { addItem } = useCart();
@@ -61,6 +62,7 @@ export default function ProductDetailModal({ product, onClose }) {
   if (!product) return null;
 
   const isFav = isFavorite(product.id);
+  const pricing = getProductPricing(product);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-neutral-900/60 backdrop-blur-sm animate-fadeIn">
@@ -117,28 +119,47 @@ export default function ProductDetailModal({ product, onClose }) {
           <div className="space-y-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold bg-forme-terracotta text-white">
-                  {product.badge || 'NEW'}
-                </span>
+                {pricing.hasDiscount ? (
+                  <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold bg-rose-600 text-white shadow-xs">
+                    -{pricing.discountPercent}% OFF
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold bg-forme-terracotta text-white">
+                    {product.badge || 'NEW'}
+                  </span>
+                )}
                 <span className="text-xs text-neutral-500 uppercase tracking-widest">
-                  {product.categoryName || 'Sculptural Leather'}
+                  {product.categoryName || product.category?.name || 'Curated'}
                 </span>
               </div>
 
-              <h2 className="font-serif text-2xl sm:text-3xl text-neutral-900 mt-2">
+              <h2 className="font-serif text-2xl sm:text-3xl text-neutral-900 mt-2 font-bold">
                 {product.name}
               </h2>
               <p className="font-condensed text-lg text-neutral-600 tracking-wider">
                 {product.modelNumber}
               </p>
 
-              <div className="flex items-center space-x-3 mt-3">
-                <span className="text-2xl font-serif text-neutral-900 font-semibold">
-                  ${Number(product.price).toFixed(2)}
-                </span>
+              <div className="flex items-center flex-wrap gap-3 mt-3">
+                <div className="flex items-baseline space-x-2.5">
+                  <span className="text-2xl sm:text-3xl font-serif text-neutral-900 font-bold">
+                    ${pricing.currentPrice.toFixed(2)}
+                  </span>
+                  {pricing.hasDiscount && (
+                    <span className="text-base sm:text-lg text-neutral-400 line-through font-serif font-normal">
+                      ${pricing.originalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+
+                {pricing.hasDiscount && (
+                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                    Save ${pricing.savings.toFixed(2)} ({pricing.discountPercent}% OFF)
+                  </span>
+                )}
                 
                 {/* Rating badge */}
-                <div className="flex items-center space-x-1 bg-white px-2.5 py-1 rounded-full text-xs text-neutral-700 shadow-sm">
+                <div className="flex items-center space-x-1 bg-white px-2.5 py-1 rounded-full text-xs text-neutral-700 shadow-sm border border-neutral-100">
                   <Star size={13} className="fill-amber-400 text-amber-400" />
                   <span className="font-medium">{product.averageRating || 5.0}</span>
                   <span className="text-neutral-400">({reviews.length} reviews)</span>

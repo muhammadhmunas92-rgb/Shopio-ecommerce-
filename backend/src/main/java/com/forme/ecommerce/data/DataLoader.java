@@ -269,12 +269,12 @@ public class DataLoader implements CommandLineRunner {
         saveProductIfMissing("Structured Caramel Studio Tote", "BG-STR-04",
                 "Sculptural dual-handled handbag tailored from grained calfskin with gold hardware and interior laptop sleeve.",
                 new BigDecimal("175.00"), 28, "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&auto=format&fit=crop&q=80",
-                "Caramel Tan", "HOT", "TRENDING", true, bags);
+                "Caramel Tan", "-50%", "TRENDING", true, bags);
 
         saveProductIfMissing("Crossbody Pebble Leather Saddle Bag", "BG-SDL-06",
                 "Hand-finished full-grain pebbled leather with antique brass hardware and magnetic snap flap closure.",
                 new BigDecimal("145.00"), 32, "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&auto=format&fit=crop&q=80",
-                "Cognac Brown", "POPULAR", "TRENDING", true, bags);
+                "Cognac Brown", "-25%", "TRENDING", true, bags);
 
         Product sunglasses = saveProductIfMissing("Aviator Polarized Metal Sunglasses", "ACC-AVI-01",
                 "Classic wireframe aviator sunglasses with polarized UV400 gradient lenses and silicone nose pads for glare reduction.",
