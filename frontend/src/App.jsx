@@ -542,7 +542,21 @@ function ShopioStore() {
       } else if (img.includes('photo-1608248597359')) {
         img = 'https://images.unsplash.com/photo-1617897903246-719242758050?w=800&auto=format&fit=crop&q=80';
       }
-      return { ...p, imageUrl: img };
+
+      const catName = p.categoryName || p.category?.name || 'General';
+      const catSlug = (p.categorySlug || p.category?.slug || catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+
+      return { 
+        ...p, 
+        imageUrl: img,
+        categoryName: catName,
+        categorySlug: catSlug,
+        category: {
+          id: p.categoryId || p.category?.id || 1,
+          name: catName,
+          slug: catSlug
+        }
+      };
     });
   };
 

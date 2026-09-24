@@ -60,7 +60,8 @@ export default function CategoryCircles({ selectedCategory, onSelectCategory }) 
 
   const handleCategoryClick = (catId) => {
     // If clicked again, toggle to ALL, otherwise set category
-    const nextCategory = selectedCategory === catId ? 'ALL' : catId;
+    const isCurrentlyActive = (selectedCategory || '').toLowerCase() === catId.toLowerCase();
+    const nextCategory = isCurrentlyActive ? 'ALL' : catId;
     if (onSelectCategory) {
       onSelectCategory(nextCategory);
     }
@@ -71,7 +72,7 @@ export default function CategoryCircles({ selectedCategory, onSelectCategory }) 
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 50);
+    }, 100);
   };
 
   const handleShowAll = () => {
@@ -83,7 +84,7 @@ export default function CategoryCircles({ selectedCategory, onSelectCategory }) 
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 50);
+    }, 100);
   };
 
   return (
@@ -102,14 +103,14 @@ export default function CategoryCircles({ selectedCategory, onSelectCategory }) 
           onClick={handleShowAll}
           className="text-xs font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
         >
-          {selectedCategory !== 'ALL' ? 'Reset to All Categories' : 'Show All (9 Categories)'}
+          {(selectedCategory || 'ALL').toUpperCase() !== 'ALL' ? 'Reset to All Categories' : 'Show All (9 Categories)'}
         </button>
       </div>
 
       {/* Circular Grid Container */}
       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3 sm:gap-4 justify-items-center">
         {categories.map((cat) => {
-          const isSelected = selectedCategory === cat.id;
+          const isSelected = (selectedCategory || '').toLowerCase() === cat.id.toLowerCase();
           return (
             <button
               key={cat.id}

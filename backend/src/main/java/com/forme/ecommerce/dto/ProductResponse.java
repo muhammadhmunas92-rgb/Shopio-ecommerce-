@@ -20,6 +20,7 @@ public class ProductResponse {
     private Boolean isFeatured;
     private Long categoryId;
     private String categoryName;
+    private String categorySlug;
     private Double averageRating = 0.0;
     private Integer reviewCount = 0;
     private LocalDateTime createdAt;
@@ -42,6 +43,7 @@ public class ProductResponse {
         if (product.getCategory() != null) {
             this.categoryId = product.getCategory().getId();
             this.categoryName = product.getCategory().getName();
+            this.categorySlug = product.getCategory().getSlug();
         }
         this.createdAt = product.getCreatedAt();
     }
@@ -156,6 +158,14 @@ public class ProductResponse {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public String getCategorySlug() {
+        return categorySlug;
+    }
+
+    public void setCategorySlug(String categorySlug) {
+        this.categorySlug = categorySlug;
     }
 
     public Double getAverageRating() {

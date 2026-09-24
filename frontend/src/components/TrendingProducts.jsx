@@ -18,12 +18,14 @@ export default function TrendingProducts({
 
   // Keep internal filter in sync whenever externalCategory changes
   useEffect(() => {
-    if (externalCategory) {
-      setInternalFilter(externalCategory);
+    if (externalCategory !== undefined && externalCategory !== null) {
+      setInternalFilter(externalCategory || 'ALL');
     }
   }, [externalCategory]);
 
-  const activeCategory = internalFilter;
+  const activeCategory = (externalCategory !== undefined && externalCategory !== null)
+    ? externalCategory 
+    : internalFilter;
 
   // Real-time multi-attribute fuzzy & partial letter search filter
   const displayList = useMemo(() => {
@@ -63,8 +65,8 @@ export default function TrendingProducts({
     }
 
     // 2. Filter by Active Category if not ALL
-    if (activeCategory !== 'ALL') {
-      const searchCat = activeCategory.toLowerCase();
+    if (activeCategory && activeCategory.toUpperCase() !== 'ALL') {
+      const searchCat = activeCategory.toLowerCase().trim();
       if (searchCat === 'sale' || searchCat === 'summer-sale') {
         result = result.filter(p => {
           const pricing = getProductPricing(p);
@@ -73,12 +75,30 @@ export default function TrendingProducts({
       } else if (searchCat === 'fashion') {
         result = result.filter(p => {
           const catSlug = (p.category?.slug || p.categorySlug || '').toLowerCase();
-          return catSlug === 'fashion' || catSlug === 'men' || catSlug === 'women';
+          const catName = (p.category?.name || p.categoryName || '').toLowerCase();
+          return (
+            catSlug === 'fashion' ||
+            catSlug.includes('fashion') ||
+            catName === 'fashion' ||
+            catName.includes('fashion') ||
+            catSlug.includes('hoodie') ||
+            catSlug === 'men' ||
+            catSlug === 'women'
+          );
         });
       } else {
         result = result.filter(p => {
           const catSlug = (p.category?.slug || p.categorySlug || '').toLowerCase();
-          return catSlug === searchCat || p.collectionTag?.toLowerCase() === searchCat;
+          const catName = (p.category?.name || p.categoryName || '').toLowerCase();
+          const colTag = (p.collectionTag || '').toLowerCase();
+
+          return (
+            catSlug === searchCat ||
+            catSlug.includes(searchCat) ||
+            catName === searchCat ||
+            catName.includes(searchCat) ||
+            colTag === searchCat
+          );
         });
       }
     }
@@ -101,9 +121,11 @@ export default function TrendingProducts({
   ];
 
   const handleTabClick = (tabId) => {
-    setInternalFilter(tabId);
+    const isCurrentlyActive = (activeCategory || '').toLowerCase() === tabId.toLowerCase();
+    const nextCategory = isCurrentlyActive && tabId.toUpperCase() !== 'ALL' ? 'ALL' : tabId;
+    setInternalFilter(nextCategory);
     if (onSelectCategory) {
-      onSelectCategory(tabId);
+      onSelectCategory(nextCategory);
     }
   };
 
